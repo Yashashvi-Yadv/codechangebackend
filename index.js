@@ -11,7 +11,7 @@ app.use(express.json());
 
 const io = new Server(server, {
   cors: {
-    origin: "*",   // later restrict to your frontend domain
+    origin: ["*", "http://localhost:3000"],   // later restrict to your frontend domain
     methods: ["GET", "POST"]
   }
 });
