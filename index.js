@@ -9,11 +9,14 @@ const server = http.createServer(app);
 app.use(cors());
 app.use(express.json());
 
+
 const io = new Server(server, {
   cors: {
-    origin: ["*", "http://localhost:3000"],   // later restrict to your frontend domain
-    methods: ["GET", "POST"]
-  }
+    origin: "*",                 // frontend origins
+    methods: ["GET", "POST"],
+    credentials: true,
+  },
+  transports: ["polling", "websocket"],   // IMPORTANT for Render
 });
 
 // In-memory rooms
