@@ -4,50 +4,54 @@ import { Server } from "socket.io";
 import cors from "cors";
 
 const app = express();
-const server = http.createServer(app);
 
-app.use(cors());
-app.use(express.json());
+/* ---------- HTTP SERVER ---------- */
+const httpServer = http.createServer(app);
 
+/* ---------- EXPRESS CORS ---------- */
+app.use(cors({
+  origin: "*",
+  methods: ["GET", "POST"],
+  credentials: true
+}));
 
-const io = new Server(server, {
+/* ---------- SOCKET.IO SERVER ---------- */
+const io = new Server(httpServer, {
+  path: "/socket.io",   // IMPORTANT
   cors: {
-    origin: "*",                 // frontend origins
+    origin: "*",
     methods: ["GET", "POST"],
-    credentials: true,
+    credentials: true
   },
-  transports: ["polling", "websocket"],   // IMPORTANT for Render
+  transports: ["polling", "websocket"]
 });
 
-// In-memory rooms
-const rooms = new Map(); // roomId -> messages[]
+/* ---------- ROOM STORE ---------- */
+const rooms = new Map();
 
 function generateRoomId(){
-  return Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit
+  return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
+/* ---------- SOCKET EVENTS ---------- */
 io.on("connection", (socket) => {
   console.log("🔗 User connected:", socket.id);
 
-  // Create room
   socket.on("room:create", () => {
-    let roomId;
-    do {
-      roomId = generateRoomId();
-    } while (rooms.has(roomId));
+    let id;
+    do { id = generateRoomId(); } while (rooms.has(id));
 
-    rooms.set(roomId, []);
-    socket.join(roomId);
+    rooms.set(id, []);
+    socket.join(id);
 
-    console.log("🆕 Room created:", roomId);
-    socket.emit("room:created", { roomId });
+    console.log("🆕 Room created:", id);
+    socket.emit("room:created", { roomId: id });
   });
 
-  // Join room
   socket.on("room:join", ({ roomId }) => {
-    console.log("➡️ Join request:", roomId);
+    console.log("➡️ Join:", roomId);
 
-    if(!rooms.has(roomId)){
+    if (!rooms.has(roomId)) {
       socket.emit("room:error", "Room not found");
       return;
     }
@@ -56,29 +60,24 @@ io.on("connection", (socket) => {
     socket.emit("room:messages", rooms.get(roomId));
   });
 
-  // Send code
   socket.on("code:send", ({ roomId, code }) => {
-    const message = {
-      id: Date.now(),
-      code,
-      time: new Date().toISOString()
-    };
-
-    rooms.get(roomId)?.push(message);
-    io.to(roomId).emit("code:new", message);
+    const msg = { id: Date.now(), code };
+    rooms.get(roomId)?.push(msg);
+    io.to(roomId).emit("code:new", msg);
   });
 
   socket.on("disconnect", () => {
-    console.log("❌ User disconnected:", socket.id);
+    console.log("❌ User disconnected");
   });
 });
 
-// Health route (Render check)
-app.get("/", (req, res) => {
-  res.send("CodeChange Backend Running 🚀");
+/* ---------- TEST ROUTE ---------- */
+app.get("/", (req,res)=>{
+  res.send("Backend running with Socket.IO 🚀");
 });
 
+/* ---------- START ---------- */
 const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => {
-  console.log(`🚀 Backend running on port ${PORT}`);
+httpServer.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
 });
