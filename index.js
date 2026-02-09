@@ -73,7 +73,10 @@ io.on("connection", (socket) => {
 
 /* ---------- TEST ROUTE ---------- */
 app.get("/", (req,res)=>{
-  res.send("Backend running with Socket.IO 🚀");
+  res.status(200).json({
+    message:"backend is running"
+  })
+
 });
 
 /* ---------- START ---------- */
