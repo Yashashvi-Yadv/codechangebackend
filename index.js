@@ -20,6 +20,8 @@ const ALLOWED_ORIGINS = [
   "http://127.0.0.1:3000",
   "http://localhost:3000",
   process.env.CLIENT_URL,
+  "https://codechange.online",
+  "https://www.codechange.online",
 ];
 
 /* ==================== CORS ==================== */
